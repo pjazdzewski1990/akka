@@ -44,6 +44,7 @@ val project = Project(
           testResults.events ++ multiNodeResults.events,
           testResults.summaries ++ multiNodeResults.summaries)
     },
-    licenses := Seq(("CC0", url("http://creativecommons.org/publicdomain/zero/1.0")))
+    licenses := Seq(("CC0", url("http://creativecommons.org/publicdomain/zero/1.0"))),
+    resolvers += "Akka Snapshot Repository" at "http://repo.akka.io/snapshots/"
   )
   .configs (MultiJvm)

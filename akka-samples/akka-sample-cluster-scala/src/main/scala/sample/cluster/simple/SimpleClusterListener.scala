@@ -2,10 +2,9 @@ package sample.cluster.simple
 
 import akka.cluster.Cluster
 import akka.cluster.ClusterEvent._
-import akka.actor.ActorLogging
-import akka.actor.Actor
+import akka.actor.{Address, ActorLogging, Actor}
 
-class SimpleClusterListener extends Actor with ActorLogging {
+class SimpleClusterListener extends Actor with ActorLogging with ColorfulLogger {
 
   val cluster = Cluster(context.system)
 
@@ -15,17 +14,40 @@ class SimpleClusterListener extends Actor with ActorLogging {
     cluster.subscribe(self, initialStateMode = InitialStateAsEvents,
       classOf[MemberEvent], classOf[UnreachableMember])
     //#subscribe
+
+    //#subscribe
+    cluster.subscribe(self, initialStateMode = InitialStateAsEvents,
+      classOf[ClusterDomainEvent])
+    //#subscribe
   }
   override def postStop(): Unit = cluster.unsubscribe(self)
 
   def receive = {
     case MemberUp(member) =>
-      log.info("Member is Up: {}", member.address)
+      writeGreen(s"Member is Up: ${member.address}")
     case UnreachableMember(member) =>
-      log.info("Member detected as unreachable: {}", member)
+      writeYellow(s"Member detected as unreachable: ${member}")
     case MemberRemoved(member, previousStatus) =>
-      log.info("Member is Removed: {} after {}",
-        member.address, previousStatus)
+      writeRed(s"Member is Removed: ${member.address} after ${previousStatus}")
+    case LeaderChanged(leader) =>
+      writeCyan(s"Current leader: $leader")
     case _: MemberEvent => // ignore
   }
+}
+
+trait ColorfulLogger { self: ActorLogging =>
+  val ANSI_RESET = "\u001B[0m"
+  val ANSI_BLACK = "\u001B[30m"
+  val ANSI_RED = "\u001B[31m"
+  val ANSI_GREEN = "\u001B[32m"
+  val ANSI_YELLOW = "\u001B[33m"
+  val ANSI_BLUE = "\u001B[34m"
+  val ANSI_PURPLE = "\u001B[35m"
+  val ANSI_CYAN = "\u001B[36m"
+  val ANSI_WHITE = "\u001B[37m"
+
+  def writeGreen(s: String) = log.info(s"$ANSI_GREEN $s $ANSI_RESET")
+  def writeRed(s: String) = log.info(s"$ANSI_RED $s $ANSI_RESET")
+  def writeYellow(s: String) = log.info(s"$ANSI_YELLOW $s $ANSI_RESET")
+  def writeCyan(s: String) = log.info(s"$ANSI_CYAN $s $ANSI_RESET")
 }
